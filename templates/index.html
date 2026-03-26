@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AI Research Assistant</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500&family=Inter:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:'Inter',sans-serif;background:#F2F0ED;color:#1A1A1A;min-height:100vh;display:flex}
+.sidebar{width:52px;border-right:1px solid #D4CFC8;display:flex;flex-direction:column;align-items:center;padding:1.5rem 0;gap:1.5rem;flex-shrink:0;min-height:100vh}
+.s-logo{font-family:'Playfair Display',serif;font-size:10px;letter-spacing:.15em;writing-mode:vertical-rl;color:#1A1A1A;text-transform:uppercase}
+.s-line{width:1px;flex:1;background:#D4CFC8}
+.s-num{font-size:9px;letter-spacing:.1em;color:#9E9890}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:100vh}
+.topbar{padding:1rem 2rem;border-bottom:1px solid #D4CFC8;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.t-title{font-family:'Playfair Display',serif;font-size:12px;letter-spacing:.2em;text-transform:uppercase}
+.t-badges{display:flex;gap:.75rem}
+.badge{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:#9E9890;padding:3px 8px;border:1px solid #D4CFC8}
+.content{flex:1;display:flex;overflow:hidden}
+.center{flex:1;padding:2rem;display:flex;flex-direction:column;gap:1.5rem;overflow-y:auto}
+.right{width:220px;border-left:1px solid #D4CFC8;padding:1.5rem;overflow-y:auto;flex-shrink:0}
+.agents{display:flex;align-items:stretch}
+.agent{flex:1;padding:1rem;border:1px solid #D4CFC8;background:#E5E2DD;transition:background .3s}
+.agent:not(:last-child){border-right:none}
+.agent.running{background:#1A1A1A}
+.agent.running .a-label{color:#F2F0ED}
+.agent.done .a-label{color:#7A9E7E}
+.a-label{font-family:'Playfair Display',serif;font-size:12px;color:#1A1A1A;margin-bottom:3px;transition:color .3s}
+.a-desc{font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#9E9890}
+.arr{padding:0 8px;font-size:13px;color:#9E9890;display:flex;align-items:center}
+.lbl{font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:#9E9890;margin-bottom:.6rem}
+.qwrap{border:1px solid #D4CFC8;background:#E5E2DD}
+.qinput{width:100%;background:transparent;border:none;outline:none;font-family:'Inter',sans-serif;font-size:14px;font-weight:300;color:#1A1A1A;padding:1rem 1.25rem;letter-spacing:.02em}
+.qinput::placeholder{color:#B0AA9F}
+.cwrap{border:1px solid #D4CFC8;border-top:none;background:#E5E2DD}
+.cinput{width:100%;background:transparent;border:none;outline:none;font-family:'Inter',sans-serif;font-size:12px;font-weight:300;color:#1A1A1A;padding:.75rem 1.25rem;resize:none;min-height:60px;letter-spacing:.02em}
+.cinput::placeholder{color:#B0AA9F}
+.runrow{display:flex;align-items:center;justify-content:space-between;padding:.6rem 0;border-bottom:1px solid #D4CFC8}
+.runhint{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#9E9890}
+.runbtn{font-family:'Inter',sans-serif;font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:#1A1A1A;background:none;border:1px solid #1A1A1A;padding:.5rem 1.25rem;cursor:pointer;transition:all .2s}
+.runbtn:hover:not(:disabled){background:#1A1A1A;color:#F2F0ED}
+.runbtn:disabled{opacity:.4;cursor:not-allowed}
+.status{padding:1rem 0;border-bottom:1px solid #D4CFC8}
+.steps{display:flex;gap:1.5rem;margin-top:.5rem}
+.step{display:flex;align-items:center;gap:6px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#B0AA9F;transition:color .3s}
+.step.active{color:#1A1A1A}
+.step.done{color:#7A9E7E}
+.dot{width:5px;height:5px;border-radius:50%;background:#D4CFC8;flex-shrink:0;transition:background .3s}
+.step.active .dot{background:#1A1A1A}
+.step.done .dot{background:#7A9E7E}
+.progress-bar{height:1px;background:#D4CFC8;margin-top:1rem;overflow:hidden}
+.progress-fill{height:100%;background:#1A1A1A;width:0%;transition:width .5s ease}
+.typewriter{border-left:2px solid #1A1A1A;padding:.75rem 1rem;background:#E5E2DD;font-size:12px;font-weight:300;color:#3A3530;line-height:1.6;display:none;margin-top:.75rem}
+.result-section{padding-top:.5rem}
+.rtabs{display:flex;gap:1.5rem;margin-bottom:1.25rem;border-bottom:1px solid #D4CFC8;padding-bottom:.6rem}
+.rtab{font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:#9E9890;background:none;border:none;cursor:pointer;padding:0;transition:color .2s}
+.rtab.active{color:#1A1A1A}
+.r-heading{font-family:'Playfair Display',serif;font-size:22px;font-weight:400;line-height:1.3;color:#1A1A1A;margin-bottom:1.25rem;max-width:440px}
+.r-body{font-size:13px;font-weight:300;line-height:1.9;color:#3A3530}
+.r-body h2{font-family:'Playfair Display',serif;font-size:16px;font-weight:400;color:#1A1A1A;margin:1.5rem 0 .5rem}
+.r-body h3{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#9E9890;margin:1.25rem 0 .4rem}
+.r-body p{margin-bottom:.85rem}
+.r-body ul{padding-left:1.25rem;margin-bottom:.85rem}
+.r-body li{margin-bottom:.35rem}
+.r-body strong{font-weight:500;color:#1A1A1A}
+.err{padding:.75rem 1rem;border:1px solid #D4CFC8;background:#F9F3EF;font-size:12px;color:#8B4A3A}
+.rlbl{font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:#9E9890;margin-bottom:1.25rem}
+.src{padding:.6rem 0;border-bottom:1px solid #D4CFC8}
+.src:first-of-type{border-top:1px solid #D4CFC8}
+.src-t{font-size:11px;font-weight:500;color:#1A1A1A;margin-bottom:2px}
+.src-m{font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#B0AA9F}
+.rsec{margin-top:1.5rem}
+.pstep{padding:.6rem 0;border-bottom:1px solid #D4CFC8;display:flex;align-items:center;justify-content:space-between}
+.pstep:first-of-type{border-top:1px solid #D4CFC8}
+.pname{font-size:11px;color:#1A1A1A}
+.pstat{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#B0AA9F;transition:color .3s}
+.pstat.active{color:#1A1A1A}
+.pstat.done{color:#7A9E7E}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.pulsing{animation:pulse 1.2s infinite}
+/* DEMO */
+.demo-section{margin-top:2rem;border-top:1px solid #D4CFC8;padding-top:1.5rem}
+.demo-label{font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:#9E9890;margin-bottom:.75rem}
+.demo-title{font-family:'Playfair Display',serif;font-size:18px;font-weight:400;color:#1A1A1A;margin-bottom:.4rem}
+.demo-sub{font-size:12px;font-weight:300;color:#9E9890;margin-bottom:1.25rem;line-height:1.6}
+.demo-box{background:#E5E2DD;border:1px solid #D4CFC8;padding:1.5rem}
+.demo-canvas{width:100%;background:#F2F0ED;border:1px solid #D4CFC8;display:block}
+.demo-controls{display:flex;flex-wrap:wrap;gap:.75rem;margin-top:1rem;align-items:center}
+.demo-ctrl-label{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#9E9890}
+.demo-btn{font-family:'Inter',sans-serif;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#1A1A1A;background:none;border:1px solid #1A1A1A;padding:.4rem 1rem;cursor:pointer;transition:all .2s}
+.demo-btn:hover:not(:disabled){background:#1A1A1A;color:#F2F0ED}
+.demo-btn:disabled{opacity:.4;cursor:not-allowed}
+.demo-btn.active-btn{background:#1A1A1A;color:#F2F0ED}
+.demo-slider-wrap{display:flex;align-items:center;gap:.5rem}
+.demo-slider{-webkit-appearance:none;width:120px;height:1px;background:#D4CFC8;outline:none}
+.demo-slider::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;background:#1A1A1A;cursor:pointer;border-radius:50%}
+.demo-val{font-size:11px;color:#1A1A1A;font-weight:500;min-width:30px}
+.demo-legend{display:flex;gap:1rem;margin-top:.75rem;flex-wrap:wrap}
+.demo-legend-item{display:flex;align-items:center;gap:5px;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#9E9890}
+.demo-legend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.demo-info{margin-top:1rem;padding:.75rem 1rem;border-left:2px solid #D4CFC8;font-size:12px;font-weight:300;color:#9E9890;line-height:1.6}
+.demo-tabs{display:flex;gap:1rem;margin-bottom:1rem}
+.demo-tab{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#9E9890;background:none;border:none;cursor:pointer;padding:.3rem 0;border-bottom:1px solid transparent;transition:all .2s}
+.demo-tab.active{color:#1A1A1A;border-bottom-color:#1A1A1A}
+.demo-detecting{padding:1rem 0;display:flex;align-items:center;gap:.75rem;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#9E9890}
+.demo-detecting-dot{width:6px;height:6px;border-radius:50%;background:#9E9890;animation:pulse 1s infinite}
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="s-logo">Research</div>
+  <div class="s-line"></div>
+  <div class="s-num">01</div>
+</div>
+
+<div class="main">
+  <div class="topbar">
+    <span class="t-title">AI Research Assistant</span>
+    <div class="t-badges">
+      <span class="badge">CrewAI</span>
+      <span class="badge">LangGraph</span>
+      <span class="badge">FAISS</span>
+      <span class="badge">Flask</span>
+    </div>
+  </div>
+  <div class="content">
+    <div class="center">
+
+      <div class="agents">
+        <div class="agent" id="ag1"><div class="a-label">Researcher</div><div class="a-desc">FAISS retrieval</div></div>
+        <div class="arr">→</div>
+        <div class="agent" id="ag2"><div class="a-label">Writer</div><div class="a-desc">Draft report</div></div>
+        <div class="arr">→</div>
+        <div class="agent" id="ag3"><div class="a-label">Critic</div><div class="a-desc">Review + finalize</div></div>
+      </div>
+
+      <div>
+        <div class="lbl">Research query</div>
+        <div class="qwrap"><input class="qinput" id="qi" type="text" placeholder="Any research paper topic — AI, economics, biology, arts..."/></div>
+        <div class="cwrap"><textarea class="cinput" id="ci" placeholder="Optional — paste abstract or extra context..."></textarea></div>
+        <div class="runrow">
+          <span class="runhint" id="rh">Ready</span>
+          <button class="runbtn" id="rb" onclick="run()">Run pipeline →</button>
+        </div>
+      </div>
+
+      <div class="status" id="statusSec" style="display:none">
+        <div class="lbl">Pipeline status</div>
+        <div class="steps">
+          <div class="step" id="s1"><div class="dot"></div>Researcher</div>
+          <div class="step" id="s2"><div class="dot"></div>Writer</div>
+          <div class="step" id="s3"><div class="dot"></div>Critic</div>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="pf"></div></div>
+        <div class="typewriter" id="tw"></div>
+      </div>
+
+      <div id="errBox" class="err" style="display:none"></div>
+
+      <!-- Demo section — only shown if AI decides a demo is possible -->
+      <div id="demoSection" style="display:none"></div>
+
+      <div id="resSec" class="result-section" style="display:none">
+        <div class="rtabs">
+          <button class="rtab active" id="tf" onclick="showTab('final',this)">Final report</button>
+          <button class="rtab" id="tn" onclick="showTab('notes',this)">Research notes</button>
+        </div>
+        <div id="rTopic" class="r-heading"></div>
+        <div class="r-body" id="rBody"></div>
+      </div>
+
+    </div>
+
+    <div class="right">
+      <div class="rlbl">Sources</div>
+      <div>
+        <div class="src"><div class="src-t">FAISS Knowledge Base</div><div class="src-m">Local vector store</div></div>
+        <div class="src"><div class="src-t">Embedded corpus</div><div class="src-m">15 AI/ML documents</div></div>
+        <div class="src"><div class="src-t">User context</div><div class="src-m">Optional input</div></div>
+      </div>
+      <div class="rsec">
+        <div class="rlbl">Agents</div>
+        <div class="pstep"><span class="pname">Researcher</span><span class="pstat" id="ps1">Idle</span></div>
+        <div class="pstep"><span class="pname">Writer</span><span class="pstat" id="ps2">Idle</span></div>
+        <div class="pstep"><span class="pname">Critic</span><span class="pstat" id="ps3">Idle</span></div>
+      </div>
+      <div class="rsec" id="demoStatus" style="display:none">
+        <div class="rlbl">Demo Status</div>
+        <div id="demoStatusText" style="font-size:11px;font-weight:300;color:#9E9890;line-height:1.6"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── MARKDOWN PARSER ───────────────────────────────────────────
+function md(t) {
+  if (!t) return '<p style="color:#B0AA9F">No content available.</p>';
+  return t.split('\n')
+    .filter(l => !/^[=\-]{3,}$/.test(l.trim()))
+    .join('\n')
+    .replace(/^#{4,} (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+    .replace(/^# (.+)$/gm, '<h2>$1</h2>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/^- (.+)$/gm, '<li>$1</li>')
+    .replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>')
+    .replace(/\n{2,}/g, '</p><p>')
+    .replace(/^(?!<[hup])(.+)$/gm, '<p>$1</p>')
+    .replace(/<p><\/p>/g, '');
+}
+
+// ── DEMO RENDERERS ────────────────────────────────────────────
+const DEMO_RENDERERS = {
+
+  cnn: {
+    title: "CNN — Convolutional Feature Map Visualizer",
+    sub: "Draw on the canvas. Click 'Apply Filter' to see how convolution extracts features.",
+    render(el) {
+      el.innerHTML = `<div class="demo-box">
+        <div class="demo-tabs">
+          <button class="demo-tab active" onclick="cnnMode('draw',this)">Draw</button>
+          <button class="demo-tab" onclick="cnnMode('edge',this)">Edge Detection</button>
+          <button class="demo-tab" onclick="cnnMode('sobel',this)">Sobel Filter</button>
+          <button class="demo-tab" onclick="cnnMode('pool',this)">Max Pooling</button>
+        </div>
+        <div style="display:flex;gap:1rem;flex-wrap:wrap;align-items:flex-start">
+          <div><div class="demo-ctrl-label" style="margin-bottom:.4rem">Input — draw here</div>
+            <canvas id="cD" width="150" height="150" style="background:#F2F0ED;border:1px solid #D4CFC8;cursor:crosshair;display:block;touch-action:none"></canvas></div>
+          <div><div class="demo-ctrl-label" style="margin-bottom:.4rem">Feature map output</div>
+            <canvas id="cO" width="150" height="150" style="background:#F2F0ED;border:1px solid #D4CFC8;display:block"></canvas></div>
+          <div><div class="demo-ctrl-label" style="margin-bottom:.4rem">Kernel (3×3)</div>
+            <canvas id="cK" width="66" height="66" style="background:#F2F0ED;border:1px solid #D4CFC8;display:block"></canvas></div>
+        </div>
+        <div class="demo-controls">
+          <button class="demo-btn" onclick="applyCNN()">Apply Filter →</button>
+          <button class="demo-btn" onclick="clearCNN()">Clear</button>
+          <div class="demo-slider-wrap">
+            <span class="demo-ctrl-label">Threshold</span>
+            <input type="range" class="demo-slider" id="cT" min="0" max="120" value="30" oninput="applyCNN()">
+            <span class="demo-val" id="cTv">30</span>
+          </div>
+        </div>
+        <div class="demo-legend">
+          <div class="demo-legend-item"><div class="demo-legend-dot" style="background:#1A1A1A"></div>Strong feature</div>
+          <div class="demo-legend-item"><div class="demo-legend-dot" style="background:#7A9E7E"></div>Medium feature</div>
+          <div class="demo-legend-item"><div class="demo-legend-dot" style="background:#F2F0ED"></div>No activation</div>
+        </div>
+        <div class="demo-info" id="cI">Draw on the canvas, then click "Apply Filter".</div>
+      </div>`;
+
+      const K = { draw:[[0,0,0],[0,1,0],[0,0,0]], edge:[[-1,-1,-1],[-1,8,-1],[-1,-1,-1]], sobel:[[1,0,-1],[2,0,-2],[1,0,-1]], pool:null };
+      const N = { draw:"Identity",edge:"Edge Detection",sobel:"Sobel X",pool:"Max Pooling" };
+      let mode = 'draw', drawing = false;
+      const dc = document.getElementById('cD'), dctx = dc.getContext('2d');
+      dctx.fillStyle='#F2F0ED'; dctx.fillRect(0,0,150,150);
+      dctx.strokeStyle='#1A1A1A'; dctx.lineWidth=9; dctx.lineCap='round';
+      dctx.beginPath(); dctx.moveTo(75,18); dctx.lineTo(28,132); dctx.stroke();
+      dctx.beginPath(); dctx.moveTo(75,18); dctx.lineTo(122,132); dctx.stroke();
+      dctx.beginPath(); dctx.moveTo(46,88); dctx.lineTo(104,88); dctx.stroke();
+
+      function dot(e) {
+        const r=dc.getBoundingClientRect();
+        dctx.fillStyle='#1A1A1A'; dctx.beginPath();
+        dctx.arc((e.clientX||e.touches[0].clientX)-r.left,(e.clientY||e.touches[0].clientY)-r.top,6,0,Math.PI*2); dctx.fill();
+      }
+      dc.onmousedown=e=>{drawing=true;dot(e);}; dc.onmousemove=e=>{if(drawing)dot(e);};
+      dc.onmouseup=()=>drawing=false; dc.onmouseleave=()=>drawing=false;
+      dc.ontouchstart=e=>{e.preventDefault();drawing=true;dot(e);};
+      dc.ontouchmove=e=>{e.preventDefault();if(drawing)dot(e);}; dc.ontouchend=()=>drawing=false;
+
+      function drawK(k) {
+        const kc=document.getElementById('cK'),kctx=kc.getContext('2d');
+        kctx.clearRect(0,0,66,66);
+        if(!k){kctx.fillStyle='#9E9890';kctx.font='9px Inter';kctx.textAlign='center';kctx.fillText('2×2 max',33,36);return;}
+        k.forEach((row,r)=>row.forEach((v,c)=>{
+          const g=Math.floor(242-((v+8)/16)*216);
+          kctx.fillStyle=`rgb(${g},${g},${g})`; kctx.fillRect(c*22,r*22,22,22);
+          kctx.strokeStyle='#D4CFC8'; kctx.lineWidth=.5; kctx.strokeRect(c*22,r*22,22,22);
+          kctx.fillStyle=(v+8)/16>.5?'#F2F0ED':'#1A1A1A'; kctx.font='8px Inter'; kctx.textAlign='center'; kctx.fillText(v,c*22+11,r*22+14);
+        }));
+      }
+
+      window.cnnMode=function(m,btn){
+        mode=m; document.querySelectorAll('.demo-tab').forEach(x=>x.classList.remove('active')); btn.classList.add('active');
+        drawK(K[m]); window.applyCNN();
+        document.getElementById('cI').textContent='Filter: '+N[m]+'. '+(m==='pool'?'Max pooling reduces spatial size by keeping the max value in each 2×2 region.':'Convolution slides this 3×3 kernel across the input to extract '+N[m].toLowerCase()+' features.');
+      };
+      window.clearCNN=function(){dctx.fillStyle='#F2F0ED';dctx.fillRect(0,0,150,150);const o=document.getElementById('cO').getContext('2d');o.fillStyle='#F2F0ED';o.fillRect(0,0,150,150);};
+      window.applyCNN=function(){
+        const thresh=parseInt(document.getElementById('cT').value);
+        document.getElementById('cTv').textContent=thresh;
+        const oc=document.getElementById('cO'),octx=oc.getContext('2d');
+        const px=dctx.getImageData(0,0,150,150).data, out=octx.createImageData(150,150);
+        if(mode==='pool'){
+          for(let r=0;r<150;r++)for(let c=0;c<150;c++){
+            const pr=Math.floor(r/2)*2,pc=Math.floor(c/2)*2;let mx=0;
+            for(let dr=0;dr<2;dr++)for(let dc=0;dc<2;dc++){const i=((pr+dr)*150+(pc+dc))*4;mx=Math.max(mx,255-px[i]);}
+            const i=(r*150+c)*4,v=mx>thresh?mx:0;out.data[i]=255-v;out.data[i+1]=255-v;out.data[i+2]=255-v;out.data[i+3]=255;
+          }
+        } else {
+          const f=K[mode]||K.draw;
+          for(let r=1;r<149;r++)for(let c=1;c<149;c++){
+            let s=0;
+            for(let kr=0;kr<3;kr++)for(let kc=0;kc<3;kc++)s+=f[kr][kc]*(255-px[((r+kr-1)*150+(c+kc-1))*4]);
+            s=Math.max(0,Math.min(255,s));
+            const i=(r*150+c)*4,v=s>thresh?s:0;
+            out.data[i]=v>180?26:v>80?122:242; out.data[i+1]=v>180?26:v>80?158:242; out.data[i+2]=v>180?26:v>80?122:242; out.data[i+3]=255;
+          }
+        }
+        octx.putImageData(out,0,0);
+      };
+      drawK(K.draw); setTimeout(window.applyCNN,100);
+    }
+  },
+
+  transformer: {
+    title: "Transformer — Self-Attention Visualizer",
+    sub: "Click any token to see how it attends to all other tokens. Switch heads to see different patterns.",
+    render(el) {
+      const tokens=["The","cat","sat","on","the","mat"];
+      const W0=[[.8,.05,.02,.03,.07,.03],[.1,.7,.08,.04,.05,.03],[.05,.15,.6,.1,.05,.05],[.03,.04,.08,.75,.05,.05],[.07,.03,.02,.03,.8,.05],[.04,.05,.15,.06,.1,.6]];
+      const shifts=[0,.15,-.1,.2]; let sel=0,head=0;
+      el.innerHTML=`<div class="demo-box">
+        <div class="demo-tabs">
+          <button class="demo-tab active" onclick="aH(0,this)">Head 1</button>
+          <button class="demo-tab" onclick="aH(1,this)">Head 2</button>
+          <button class="demo-tab" onclick="aH(2,this)">Head 3</button>
+          <button class="demo-tab" onclick="aH(3,this)">Head 4</button>
+        </div>
+        <canvas id="aC" class="demo-canvas" height="240"></canvas>
+        <div class="demo-controls"><span class="demo-ctrl-label">Select token:</span><div id="tB" style="display:flex;gap:.5rem;flex-wrap:wrap"></div></div>
+        <div class="demo-legend">
+          <div class="demo-legend-item"><div class="demo-legend-dot" style="background:#1A1A1A"></div>Query token</div>
+          <div class="demo-legend-item"><div class="demo-legend-dot" style="background:#7A9E7E"></div>High attention</div>
+          <div class="demo-legend-item"><div class="demo-legend-dot" style="background:#D4CFC8"></div>Low attention</div>
+        </div>
+        <div class="demo-info" id="aI">Click a token to see its attention distribution.</div>
+      </div>`;
+      function gW(s,h){return W0[s].map((w,i)=>Math.max(.02,Math.min(.95,w+shifts[h]*(i%2?-1:1))));}
+      function draw(s,h){
+        const canvas=document.getElementById('aC');if(!canvas)return;
+        const ctx=canvas.getContext('2d'),W=canvas.offsetWidth;canvas.width=W;const H=240;
+        ctx.clearRect(0,0,W,H);
+        const bw=55,bh=28,gap=(W-tokens.length*bw)/(tokens.length+1),ry1=18,ry2=H-50;
+        const w=gW(s,h);
+        tokens.forEach((_,i)=>{
+          ctx.beginPath();ctx.moveTo(gap+s*(gap+bw)+bw/2,ry1+bh);
+          ctx.bezierCurveTo(gap+s*(gap+bw)+bw/2,ry1+bh+35,gap+i*(gap+bw)+bw/2,ry2-35,gap+i*(gap+bw)+bw/2,ry2);
+          ctx.strokeStyle=`rgba(26,26,26,${w[i]})`;ctx.lineWidth=w[i]*4+.5;ctx.stroke();
+        });
+        tokens.forEach((t,i)=>{
+          const x=gap+i*(gap+bw);
+          ctx.fillStyle=i===s?'#1A1A1A':'#E5E2DD';ctx.fillRect(x,ry1,bw,bh);
+          ctx.strokeStyle='#D4CFC8';ctx.lineWidth=1;ctx.strokeRect(x,ry1,bw,bh);
+          ctx.fillStyle=i===s?'#F2F0ED':'#1A1A1A';ctx.font='11px Inter';ctx.textAlign='center';ctx.fillText(t,x+bw/2,ry1+18);
+          const g=Math.floor(158+(26-158)*w[i]);
+          ctx.fillStyle=`rgb(${g},${Math.floor(g*1.04)},${g})`;ctx.fillRect(x,ry2,bw,bh);
+          ctx.strokeStyle='#D4CFC8';ctx.lineWidth=1;ctx.strokeRect(x,ry2,bw,bh);
+          ctx.fillStyle=w[i]>.4?'#F2F0ED':'#1A1A1A';ctx.font='11px Inter';ctx.textAlign='center';ctx.fillText(t,x+bw/2,ry2+18);
+          ctx.fillStyle='#9E9890';ctx.font='9px Inter';ctx.fillText(w[i].toFixed(2),x+bw/2,ry2+bh+13);
+        });
+        const top=w.indexOf(Math.max(...w));
+        document.getElementById('aI').textContent=`"${tokens[s]}" attends most to "${tokens[top]}" (${Math.max(...w).toFixed(2)}). Head ${h+1} shown.`;
+      }
+      const bd=document.getElementById('tB');
+      tokens.forEach((t,i)=>{
+        const b=document.createElement('button');b.className='demo-btn'+(i===0?' active-btn':'');b.textContent=t;
+        b.onclick=()=>{sel=i;document.querySelectorAll('#tB .demo-btn').forEach(x=>x.classList.remove('active-btn'));b.classList.add('active-btn');draw(sel,head);};
+        bd.appendChild(b);
+      });
+      window.aH=(h,btn)=>{head=h;document.querySelectorAll('.demo-tab').forEach(x=>x.classList.remove('active'));btn.classList.add('active');draw(sel,head);};
+      setTimeout(()=>draw(0,0),100);window.addEventListener('resize',()=>draw(sel,head));
+    }
+  },
+
+  lstm: {
+    title: "LSTM — Gate Mechanism Visualizer",
+    sub: "Drag sliders to control input, hidden state, and cell. Watch all 4 gates react in real time.",
+    render(el) {
+      el.innerHTML=`<div class="demo-box">
+        <canvas id="lC" class="demo-canvas" height="300"></canvas>
+        <div class="demo-controls" style="flex-direction:column;align-items:flex-start;gap:.75rem">
+          <div class="demo-slider-wrap"><span class="demo-ctrl-label" style="width:80px">Input x</span><input type="range" class="demo-slider" id="lx" min="0" max="100" value="70" oninput="dL()"><span class="demo-val" id="lxv">0.70</span></div>
+          <div class="demo-slider-wrap"><span class="demo-ctrl-label" style="width:80px">Hidden h</span><input type="range" class="demo-slider" id="lh" min="0" max="100" value="40" oninput="dL()"><span class="demo-val" id="lhv">0.40</span></div>
+          <div class="demo-slider-wrap"><span class="demo-ctrl-label" style="width:80px">Cell c</span><input type="range" class="demo-slider" id="lc" min="0" max="100" value="55" oninput="dL()"><span class="demo-val" id="lcv">0.55</span></div>
+        </div>
+        <div class="demo-legend">
+          <div class="demo-legend-item"><div class="demo-legend-dot" style="background:#7A9E7E"></div>Gate open (≥0.5)</div>
+          <div class="demo-legend-item"><div class="demo-legend-dot" style="background:#C4736A"></div>Gate closed (&lt;0.5)</div>
+        </div>
+        <div class="demo-info" id="lI">Drag sliders to see how gates activate.</div>
+      </div>`;
+      function sig(x){return 1/(1+Math.exp(-x));}
+      window.dL=function(){
+        const xv=document.getElementById('lx').value/100,hv=document.getElementById('lh').value/100,cv=document.getElementById('lc').value/100;
+        document.getElementById('lxv').textContent=xv.toFixed(2);document.getElementById('lhv').textContent=hv.toFixed(2);document.getElementById('lcv').textContent=cv.toFixed(2);
+        const f=sig((xv+hv)*4-2),i=sig((xv-hv+.3)*4),g=(Math.tanh((xv+hv-.5)*3)+1)/2,cn=f*cv+i*g,o=sig((xv+hv*.5)*3-1),hn=o*Math.tanh(cn*2-1);
+        const canvas=document.getElementById('lC');if(!canvas)return;
+        const ctx=canvas.getContext('2d'),W=canvas.offsetWidth;canvas.width=W;const H=300;
+        ctx.clearRect(0,0,W,H);
+        ctx.strokeStyle='#1A1A1A';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(20,75);ctx.lineTo(W-20,75);ctx.stroke();
+        ctx.fillStyle='#9E9890';ctx.font='9px Inter';ctx.textAlign='left';ctx.fillText('Cell state  c',24,67);
+        [{n:'Forget\nGate',v:f,x:W*.18},{n:'Input\nGate',v:i,x:W*.38},{n:'Cell\nGate',v:g,x:W*.58},{n:'Output\nGate',v:o,x:W*.78}].forEach(gate=>{
+          const col=gate.v>=.5?'#7A9E7E':'#C4736A',bw=58,bh=34,bx=gate.x-bw/2,by=110;
+          ctx.beginPath();ctx.moveTo(gate.x,75);ctx.lineTo(gate.x,by);ctx.strokeStyle=col;ctx.lineWidth=gate.v*3+.5;ctx.stroke();
+          ctx.fillStyle=col;ctx.fillRect(bx,by,bw,bh);
+          ctx.fillStyle='#F2F0ED';ctx.font='500 9px Inter';ctx.textAlign='center';
+          gate.n.split('\n').forEach((l,li)=>ctx.fillText(l,gate.x,by+13+li*12));
+          ctx.fillStyle='#D4CFC8';ctx.fillRect(bx,by+bh+6,bw,8);ctx.fillStyle=col;ctx.fillRect(bx,by+bh+6,bw*gate.v,8);
+          ctx.fillStyle='#9E9890';ctx.font='9px Inter';ctx.fillText(gate.v.toFixed(2),gate.x,by+bh+22);
+          ctx.beginPath();ctx.moveTo(gate.x,by+bh);ctx.lineTo(gate.x,H-40);ctx.strokeStyle=col;ctx.lineWidth=1;ctx.stroke();
+        });
+        ctx.fillStyle='#1A1A1A';ctx.fillRect(W/2-55,H-36,110,26);ctx.fillStyle='#F2F0ED';ctx.font='10px Inter';ctx.textAlign='center';ctx.fillText('h_new = '+hn.toFixed(3),W/2,H-19);
+        document.getElementById('lI').textContent=`Forget:${f.toFixed(2)} | Input:${i.toFixed(2)} | Output:${o.toFixed(2)} → h_new:${hn.toFixed(3)}. ${f>.5?'Memory retained.':'Memory mostly forgotten.'}`;
+      };
+      setTimeout(window.dL,100);window.addEventListener('resize',window.dL);
+    }
+  },
+
+  federated: {
+    title: "Federated Learning — Round Simulator",
+    sub: "Click 'Run Round' to simulate one FedAvg training round across 4 distributed clients.",
+    render(el) {
+      let round=0,gAcc=.42,cAccs=[.38,.41,.45,.36],running=false;
+      el.innerHTML=`<div class="demo-box">
+        <canvas id="fC" class="demo-canvas" height="260"></canvas>
+        <div class="demo-controls">
+          <button class="demo-btn" id="fB" onclick="rFed()">Run Round →</button>
+          <button class="demo-btn" onclick="rstFed()">Reset</button>
+          <span class="demo-ctrl-label">Round: <span id="fR">0</span>/10</span>
+        </div>
+        <div class="demo-info" id="fI">Press "Run Round" to simulate FedAvg aggregation.</div>
+      </div>`;
+      function drawF(hi){
+        const canvas=document.getElementById('fC');if(!canvas)return;
+        const ctx=canvas.getContext('2d'),W=canvas.offsetWidth;canvas.width=W;const H=260;
+        ctx.clearRect(0,0,W,H);
+        const cx=W/2,sy=42,cy=186,xs=[W*.15,W*.38,W*.62,W*.85];
+        xs.forEach((x,i)=>{ctx.beginPath();ctx.moveTo(cx,sy+28);ctx.lineTo(x,cy-18);ctx.strokeStyle=hi===i?'#1A1A1A':'#D4CFC8';ctx.lineWidth=hi===i?2:1;ctx.stroke();});
+        ctx.fillStyle='#1A1A1A';ctx.fillRect(cx-46,sy,92,26);ctx.fillStyle='#F2F0ED';ctx.font='500 10px Inter';ctx.textAlign='center';ctx.fillText('Global Model',cx,sy+17);
+        ctx.fillStyle='#9E9890';ctx.font='9px Inter';ctx.fillText('acc: '+gAcc.toFixed(3),cx,sy+40);
+        ctx.fillStyle='#D4CFC8';ctx.fillRect(cx-38,sy+46,76,5);ctx.fillStyle='#7A9E7E';ctx.fillRect(cx-38,sy+46,76*gAcc,5);
+        xs.forEach((x,i)=>{
+          const col=hi===i?'#1A1A1A':'#E5E2DD',tc=hi===i?'#F2F0ED':'#1A1A1A';
+          ctx.fillStyle=col;ctx.fillRect(x-33,cy,66,24);ctx.strokeStyle='#D4CFC8';ctx.lineWidth=1;ctx.strokeRect(x-33,cy,66,24);
+          ctx.fillStyle=tc;ctx.font='10px Inter';ctx.textAlign='center';ctx.fillText('Client '+(i+1),x,cy+10);
+          ctx.fillStyle='#9E9890';ctx.font='9px Inter';ctx.fillText(cAccs[i].toFixed(3),x,cy+23);
+          ctx.fillStyle='#D4CFC8';ctx.fillRect(x-30,cy+28,60,5);
+          ctx.fillStyle=cAccs[i]>gAcc?'#7A9E7E':'#C4736A';ctx.fillRect(x-30,cy+28,60*cAccs[i],5);
+        });
+      }
+      window.rFed=async function(){
+        if(running||round>=10)return;running=true;document.getElementById('fB').disabled=true;round++;document.getElementById('fR').textContent=round;
+        for(let i=0;i<4;i++){cAccs[i]=Math.min(.98,cAccs[i]+(Math.random()*.06+.02));drawF(i);document.getElementById('fI').textContent=`Client ${i+1} training... acc: ${cAccs[i].toFixed(3)}`;await new Promise(r=>setTimeout(r,400));}
+        gAcc=cAccs.reduce((a,b)=>a+b,0)/4;drawF(-1);document.getElementById('fI').textContent=`Round ${round} done. FedAvg → global acc: ${gAcc.toFixed(3)}. ${round>=10?'Complete!':''}`;
+        running=false;document.getElementById('fB').disabled=round>=10;
+      };
+      window.rstFed=function(){round=0;gAcc=.42;cAccs=[.38,.41,.45,.36];running=false;document.getElementById('fR').textContent='0';document.getElementById('fB').disabled=false;document.getElementById('fI').textContent='Press "Run Round" to simulate FedAvg aggregation.';drawF(-1);};
+      setTimeout(()=>drawF(-1),100);window.addEventListener('resize',()=>drawF(-1));
+    }
+  },
+
+  rag: {
+    title: "RAG — Semantic Retrieval Visualizer",
+    sub: "Type any query to see how FAISS ranks documents by cosine similarity in real time.",
+    render(el) {
+      const docs=["Transformers use self-attention for sequence modeling","LSTM gates control memory flow in recurrent networks","RAG combines retrieval with generative LLMs","Federated learning trains without sharing raw data","MLOps manages model deployment and monitoring","FAISS enables fast nearest neighbor vector search","BERT uses masked language modeling for pretraining","Gradient descent optimizes neural network weights"];
+      el.innerHTML=`<div class="demo-box">
+        <div style="display:flex;gap:.5rem;margin-bottom:1rem">
+          <input id="rQ" type="text" placeholder="Type a search query..." style="flex:1;background:#F2F0ED;border:1px solid #D4CFC8;outline:none;font-family:Inter,sans-serif;font-size:13px;padding:.5rem .75rem;color:#1A1A1A"/>
+          <button class="demo-btn" onclick="sR()">Search →</button>
+        </div>
+        <canvas id="rC" class="demo-canvas" height="240"></canvas>
+        <div class="demo-info" id="rI">Enter a query to see which documents get retrieved.</div>
+      </div>`;
+      function sim(q,d){const qw=q.toLowerCase().split(' '),dw=d.toLowerCase().split(' ');return Math.min(.97,.08+qw.filter(w=>dw.some(x=>x.includes(w)||w.includes(x))).length*.26+Math.random()*.04);}
+      function drawR(scores){
+        const canvas=document.getElementById('rC');if(!canvas)return;
+        const ctx=canvas.getContext('2d'),W=canvas.offsetWidth;canvas.width=W;const H=240,rH=H/docs.length;
+        ctx.clearRect(0,0,W,H);
+        const s=scores?[...scores].sort((a,b)=>b.s-a.s):docs.map(d=>({d,s:.08}));
+        s.forEach((item,i)=>{
+          const mBW=W-168,col=i===0?'#1A1A1A':i===1?'#3A3530':i===2?'#6E6860':'#D4CFC8';
+          ctx.fillStyle=i<3?'#E5E2DD':'#F2F0ED';ctx.fillRect(158,i*rH+2,mBW,rH-4);
+          ctx.fillStyle=col;ctx.fillRect(158,i*rH+2,mBW*item.s,rH-4);
+          ctx.fillStyle='#1A1A1A';ctx.font=(i<3?'500 ':'')+'10px Inter';ctx.textAlign='right';
+          ctx.fillText(item.d.length>32?item.d.slice(0,32)+'…':item.d,152,i*rH+rH/2+4);
+          ctx.fillStyle=i<3?'#1A1A1A':'#9E9890';ctx.font='9px Inter';ctx.textAlign='left';ctx.fillText(item.s.toFixed(2),162+mBW*item.s+2,i*rH+rH/2+4);
+          if(i<3){ctx.fillStyle=col;ctx.fillRect(W-30,i*rH+4,26,rH-8);ctx.fillStyle='#F2F0ED';ctx.font='500 8px Inter';ctx.textAlign='center';ctx.fillText('#'+(i+1),W-17,i*rH+rH/2+3);}
+        });
+      }
+      window.sR=function(){const q=document.getElementById('rQ').value.trim();if(!q)return;const s=docs.map(d=>({d,s:sim(q,d)}));s.sort((a,b)=>b.s-a.s);drawR(s);document.getElementById('rI').textContent=`Top match: "${s[0].d}" (${s[0].s.toFixed(2)}). Top 3 injected into LLM context.`;};
+      document.getElementById('rQ').addEventListener('keypress',e=>{if(e.key==='Enter')window.sR();});
+      setTimeout(()=>drawR(null),100);window.addEventListener('resize',()=>drawR(null));
+    }
+  },
+
+  mlops: {
+    title: "MLOps — Deployment Pipeline Tracker",
+    sub: "Click Deploy to walk through a full ML deployment pipeline stage by stage.",
+    render(el) {
+      const stages=[{n:"Data\nIngestion",d:"Loading + validating dataset"},{n:"Feature\nEng.",d:"Encoding, scaling, splitting"},{n:"Model\nTrain",d:"Training + experiment tracking"},{n:"Evaluation",d:"Accuracy, F1, AUC metrics"},{n:"Packaging",d:"Docker container build"},{n:"Deploy",d:"Push to production endpoint"},{n:"Monitor",d:"Drift detection + alerting"}];
+      let cur=-1,running=false;
+      el.innerHTML=`<div class="demo-box">
+        <canvas id="mC" class="demo-canvas" height="200"></canvas>
+        <div class="demo-controls">
+          <button class="demo-btn" id="mB" onclick="rML()">Deploy →</button>
+          <button class="demo-btn" onclick="rstML()">Reset</button>
+        </div>
+        <div class="demo-info" id="mI">Click Deploy to walk through the full MLOps pipeline.</div>
+      </div>`;
+      function drawM(c){
+        const canvas=document.getElementById('mC');if(!canvas)return;
+        const ctx=canvas.getContext('2d'),W=canvas.offsetWidth;canvas.width=W;const H=200;
+        const n=stages.length,bw=Math.min(66,(W-12)/n-5),gap=(W-n*bw)/(n+1),by=52;
+        ctx.clearRect(0,0,W,H);
+        stages.forEach((s,i)=>{
+          const x=gap+i*(gap+bw),done=i<c,active=i===c;
+          if(i>0){ctx.beginPath();ctx.moveTo(gap+(i-1)*(gap+bw)+bw,by+20);ctx.lineTo(x,by+20);ctx.strokeStyle=done||active?'#1A1A1A':'#D4CFC8';ctx.lineWidth=done?2:1;ctx.stroke();}
+          ctx.fillStyle=active?'#1A1A1A':done?'#3A3530':'#E5E2DD';ctx.fillRect(x,by,bw,40);ctx.strokeStyle='#D4CFC8';ctx.lineWidth=1;ctx.strokeRect(x,by,bw,40);
+          ctx.fillStyle=active||done?'#F2F0ED':'#9E9890';ctx.font='8px Inter';ctx.textAlign='center';
+          s.n.split('\n').forEach((l,li)=>ctx.fillText(l,x+bw/2,by+13+li*11));
+          if(done){ctx.fillStyle='#7A9E7E';ctx.font='bold 10px Inter';ctx.fillText('✓',x+bw-7,by+9);}
+          if(active){ctx.fillStyle='#9E9890';ctx.font='9px Inter';ctx.fillText(s.d,x+bw/2,by+56);}
+        });
+        const pct=c<0?0:(c+1)/stages.length;
+        ctx.fillStyle='#D4CFC8';ctx.fillRect(14,H-18,W-28,3);ctx.fillStyle='#1A1A1A';ctx.fillRect(14,H-18,(W-28)*pct,3);
+        ctx.fillStyle='#9E9890';ctx.font='9px Inter';ctx.textAlign='left';ctx.fillText(Math.round(pct*100)+'% complete',14,H-5);
+      }
+      window.rML=async function(){if(running)return;running=true;document.getElementById('mB').disabled=true;for(let i=0;i<stages.length;i++){cur=i;drawM(i);document.getElementById('mI').textContent=`[${i+1}/${stages.length}] ${stages[i].n.replace('\n',' ')} — ${stages[i].d}`;await new Promise(r=>setTimeout(r,650));}cur=stages.length;drawM(stages.length);document.getElementById('mI').textContent='Pipeline complete. Model deployed + monitoring active.';running=false;};
+      window.rstML=function(){cur=-1;running=false;document.getElementById('mB').disabled=false;document.getElementById('mI').textContent='Click Deploy to walk through the full MLOps pipeline.';drawM(-1);};
+      setTimeout(()=>drawM(-1),100);window.addEventListener('resize',()=>drawM(cur));
+    }
+  }
+};
+
+// ── AI-DRIVEN DEMO DETECTION (calls backend) ──────────────────
+async function detectAndRenderDemo(topic, report) {
+  const demoSec = document.getElementById('demoSection');
+  const demoStatus = document.getElementById('demoStatus');
+  const demoStatusText = document.getElementById('demoStatusText');
+
+  // Show detecting state
+  demoSec.style.display = 'block';
+  demoSec.innerHTML = `<div class="demo-detecting"><div class="demo-detecting-dot"></div>Analyzing paper for interactive demo...</div>`;
+  demoStatus.style.display = 'block';
+  demoStatusText.textContent = 'Analyzing...';
+
+  try {
+    const res = await fetch('/detect-demo', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ topic, report })
+    });
+    const data = await res.json();
+    const demoType = data.demo_type;
+
+    if (!demoType || !DEMO_RENDERERS[demoType]) {
+      // No demo available — hide section cleanly
+      demoSec.style.display = 'none';
+      demoSec.innerHTML = '';
+      demoStatus.style.display = 'block';
+      demoStatusText.textContent = 'No demo available for this topic.';
+      return;
+    }
+
+    // Render the correct demo
+    const renderer = DEMO_RENDERERS[demoType];
+    demoSec.innerHTML = `
+      <div class="demo-section">
+        <div class="demo-label">Interactive Demo</div>
+        <div class="demo-title">${renderer.title}</div>
+        <div class="demo-sub">${renderer.sub}</div>
+        <div id="demoInner"></div>
+      </div>`;
+    renderer.render(document.getElementById('demoInner'));
+    demoStatus.style.display = 'block';
+    demoStatusText.textContent = 'Demo available — scroll down.';
+    setTimeout(() => demoSec.scrollIntoView({ behavior: 'smooth', block: 'start' }), 400);
+
+  } catch (e) {
+    // On error, just hide — don't show wrong demo
+    demoSec.style.display = 'none';
+    demoSec.innerHTML = '';
+    demoStatus.style.display = 'none';
+    console.log('Demo detection failed:', e);
+  }
+}
+
+// ── PIPELINE HELPERS ──────────────────────────────────────────
+let finalR = '', notesR = '';
+function setSt(id,s){document.getElementById(id).className='step '+(s||'');}
+function setAg(id,s){document.getElementById(id).className='agent '+(s||'');}
+function setPS(id,t,s){const e=document.getElementById(id);e.textContent=t;e.className='pstat '+(s||'');}
+function typeText(el,text,speed,cb){el.style.display='block';el.textContent='';let i=0;const iv=setInterval(()=>{el.textContent+=text[i++];if(i>=text.length){clearInterval(iv);if(cb)cb();}},speed);}
+function showTab(tab,btn){document.querySelectorAll('.rtab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');document.getElementById('rBody').innerHTML=md(tab==='final'?finalR:notesR);}
+
+async function run() {
+  const topic = document.getElementById('qi').value.trim();
+  const extra = document.getElementById('ci').value.trim();
+  if (!topic) { alert('Please enter a research topic.'); return; }
+
+  // Reset everything
+  document.getElementById('errBox').style.display = 'none';
+  document.getElementById('resSec').style.display = 'none';
+  document.getElementById('demoSection').style.display = 'none';
+  document.getElementById('demoSection').innerHTML = '';
+  document.getElementById('demoStatus').style.display = 'none';
+  document.getElementById('statusSec').style.display = 'block';
+  document.getElementById('rb').disabled = true;
+  document.getElementById('rh').textContent = 'Running...';
+  document.getElementById('tw').style.display = 'none';
+  document.getElementById('pf').style.width = '0%';
+  setSt('s1',''); setSt('s2',''); setSt('s3','');
+  setAg('ag1',''); setAg('ag2',''); setAg('ag3','');
+  setPS('ps1','Idle',''); setPS('ps2','Idle',''); setPS('ps3','Idle','');
+
+  const tw = document.getElementById('tw'), pf = document.getElementById('pf');
+
+  setSt('s1','active pulsing'); setAg('ag1','running'); setPS('ps1','Active','active'); pf.style.width='10%';
+  await new Promise(r=>typeText(tw,'Researcher → Querying FAISS... retrieving top-5 matches for "'+topic+'"',20,r));
+  await new Promise(r=>setTimeout(r,500)); pf.style.width='33%';
+
+  setSt('s1','done'); setSt('s2','active pulsing'); setAg('ag1','done'); setAg('ag2','running'); setPS('ps1','Done','done'); setPS('ps2','Active','active');
+  tw.textContent='';
+  await new Promise(r=>typeText(tw,'Writer → Structuring notes — Overview, Key Concepts, Deep Dive, Applications...',20,r));
+  await new Promise(r=>setTimeout(r,500)); pf.style.width='66%';
+
+  setSt('s2','done'); setSt('s3','active pulsing'); setAg('ag2','done'); setAg('ag3','running'); setPS('ps2','Done','done'); setPS('ps3','Active','active');
+  tw.textContent='';
+  await new Promise(r=>typeText(tw,'Critic → Reviewing accuracy, clarity, completeness. Adding Key Takeaways...',20,r));
+
+  try {
+    const res = await fetch('/research', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ topic, extra_context: extra })
+    });
+    const data = await res.json();
+
+    pf.style.width = '100%';
+    setSt('s3','done'); setAg('ag3','done'); setPS('ps3','Done','done');
+    tw.style.display = 'none';
+    document.getElementById('statusSec').style.display = 'none';
+    document.getElementById('rb').disabled = false;
+    document.getElementById('rh').textContent = 'Complete';
+
+    if (data.error) {
+      document.getElementById('errBox').textContent = 'Error — ' + data.error;
+      document.getElementById('errBox').style.display = 'block';
+      setSt('s1',''); setSt('s2',''); setSt('s3','');
+      setAg('ag1',''); setAg('ag2',''); setAg('ag3','');
+      setPS('ps1','Idle',''); setPS('ps2','Idle',''); setPS('ps3','Idle','');
+      return;
+    }
+
+    finalR = data.final_report;
+    notesR = data.research_notes;
+    document.getElementById('rTopic').textContent = topic;
+    document.getElementById('rBody').innerHTML = md(finalR);
+    document.getElementById('resSec').style.display = 'block';
+    document.getElementById('tf').classList.add('active');
+    document.getElementById('tn').classList.remove('active');
+
+    // Let the AI decide if a demo is appropriate — no hardcoded keywords
+    detectAndRenderDemo(topic, finalR);
+
+  } catch (e) {
+    document.getElementById('rb').disabled = false;
+    document.getElementById('rh').textContent = 'Ready';
+    tw.style.display = 'none';
+    document.getElementById('errBox').textContent = 'Network error — ' + e.message;
+    document.getElementById('errBox').style.display = 'block';
+  }
+}
+
+document.getElementById('qi').addEventListener('keypress', e => { if (e.key === 'Enter') run(); });
+</script>
+</body>
+</html>
