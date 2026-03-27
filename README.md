@@ -21,7 +21,7 @@ pinned: false
 
 ## 🚀 Live Demo
 
-🔗 **[Try it here →]([https://your-render-link.onrender.com](https://huggingface.co/spaces/zermeenewajid/research-assistant))**
+🔗 **[Try it here →](https://huggingface.co/spaces/zermeenewajid/research-assistant)**
 
 ---
 
