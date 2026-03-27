@@ -1,3 +1,11 @@
+---
+title: Research Assistant
+emoji: 🔬
+colorFrom: gray
+colorTo: blue
+sdk: docker
+pinned: false
+---
 # 🔬 AI Research Assistant
 
 > **Multi-Agent RAG System** — Research any paper topic and get an AI-generated report with an interactive visualization demo.
