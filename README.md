@@ -21,7 +21,7 @@ pinned: false
 
 ## 🚀 Live Demo
 
-🔗 **[Try it here →](https://your-render-link.onrender.com)**
+🔗 **[Try it here →]([https://your-render-link.onrender.com](https://huggingface.co/spaces/zermeenewajid/research-assistant))**
 
 ---
 
@@ -148,8 +148,8 @@ Research_Assistant/
 **Zermine Wajid**
 BS Artificial Intelligence — GIK Institute of Engineering Sciences and Technology (GIKI)
 
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-blue?style=flat-square&logo=linkedin)](https://linkedin.com/in/yourprofile)
-[![GitHub](https://img.shields.io/badge/GitHub-Follow-black?style=flat-square&logo=github)](https://github.com/zerminewajid)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-blue?style=flat-square&logo=linkedin)]([https://linkedin.com/in/yourprofile](https://www.linkedin.com/in/zermine-wajid-a206b01b9/))
+[![GitHub](https://img.shields.io/badge/GitHub-Follow-black?style=flat-square&logo=github)]([https://github.com/zerminewajid](https://github.com/zerminewajid))
 
 ---
 
